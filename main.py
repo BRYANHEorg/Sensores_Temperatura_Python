@@ -137,3 +137,55 @@ def momento_mas_caluroso(estaciones):
         },
         estaciones
     ))
+
+def resumen_presion(estacion, fecha):
+    lecturas = list(filter(
+        lambda lectura: lectura['fecha'] == fecha,
+        estacion['lecturas']
+    ))
+
+    if not lecturas:
+        return {
+            'estacion_id': estacion['id'],
+            'poblacion': estacion['poblacion'],
+            'fecha': fecha,
+            'estado': 'Sin datos'
+        }
+
+    presiones = list(map(
+        lambda lectura: lectura['presion_hpa'],
+        lecturas
+    ))
+
+    minima = min(presiones)
+    maxima = max(presiones)
+
+    return {
+        'estacion_id': estacion['id'],
+        'poblacion': estacion['poblacion'],
+        'fecha': fecha,
+        'presion_minima_hpa': minima,
+        'presion_maxima_hpa': maxima,
+        'fluctuacion_hpa': round(maxima - minima, 2)
+    }
+
+
+def fluctuacion_barometrica(estaciones, fecha_inicial):
+    inicio = datetime.strptime(fecha_inicial, '%Y-%m-%d')
+
+    fechas = list(map(
+        lambda numero:
+            (inicio + timedelta(days=numero)).strftime('%Y-%m-%d'),
+        range(7)
+    ))
+
+    return list(map(
+        lambda fecha: {
+            'fecha': fecha,
+            'estaciones': list(map(
+                lambda estacion: resumen_presion(estacion, fecha),
+                estaciones
+            ))
+        },
+        fechas
+    ))
