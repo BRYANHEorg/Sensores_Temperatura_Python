@@ -1,52 +1,37 @@
-import random 
-# Estaciones array
-Estaciones = {
-    "EST-01": "Puntarenas Centro", 
-    "EST-02": "Playa Jacó", 
-    "EST-03": "Parrita",
-    "EST-04": "Manuel Antonio", 
-    "EST-05": "Playa Dominical", 
-    "EST-06": "Palmar Sur",
-    "EST-07": "Bahía Drake", 
-    "EST-08": "Puerto Jiménez", 
-    "EST-09": "Golfito",
-    "EST-10": "Paso Canoas",
+import locale
+import random
+locale.setlocale(locale.LC_ALL, "es")
+from datetime import datetime, timedelta
+
+RANGOS = {
+    'temperatura_c': [24, 35],
+    'humedad_pct': [60, 100],
+    'presion_hpa': [1005, 1015]
 }
 
+POBLACIONES = [
+    'Puntarenas Centro', 'Caldera', 'Tárcoles', 'Jacó',
+    'Esterillos', 'Quepos', 'Dominical', 'Uvita',
+    'Golfito', 'Puerto Jiménez'
+]
 
-# Rango 
-rangos = {
-    'temperatura': [28, 40],
-    'humedad': [60, 100],
-    'presion': [1005, 1015]
-}
+DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+INICIO = datetime(2026, 9, 14)  # la semana de lecturas empieza el lunes 14/09/2026
 
 
-# Function to generate the
-for dia in range(1, 8):
-    for hora in range(24):
-        for minuto in range(0, 60, 10):
-            for estacion in estaciones:
 
-                lectura = {
-                    'dia': dia,
-                    'hora': hora,
-                    'minuto': minuto,
+def fecha_texto(fecha):
+    return '{0} {1:02d}/{2:02d}/{3}'.format(DIAS[fecha.weekday()], fecha.day, fecha.month, fecha.year)
 
-                    'temperatura': round(random.uniform(
-                        rangos['temperatura'][0],
-                        rangos['temperatura'][1]
-                    ), 2),
 
-                    'humedad': round(random.uniform(
-                        rangos['humedad'][0],
-                        rangos['humedad'][1]
-                    ), 2),
+def crear_estaciones():
+    return list(map(
+        lambda dato: {
+            'id': 'EST{0:02d}'.format(dato[0] + 1),
+            'poblacion': dato[1],
+            'lecturas': []
+        },
+        enumerate(POBLACIONES)
+    ))
 
-                    'presion': round(random.uniform(
-                        rangos['presion'][0],
-                        rangos['presion'][1]
-                    ), 2)
-                }
 
-                estacion['lecturas'].append(lectura)
