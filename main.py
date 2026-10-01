@@ -189,3 +189,150 @@ def fluctuacion_barometrica(estaciones, fecha_inicial):
         },
         fechas
     ))
+
+
+def fecha_hora(lectura):
+    return datetime.strptime(
+        '{0} {1}'.format(lectura['fecha'], lectura['hora']),
+        '%Y-%m-%d %H:%M'
+    )
+
+
+def agrupar_alerta(grupos, lectura):
+    momento = fecha_hora(lectura)
+    criticidad = round(
+        (lectura['temperatura_c'] - 32)
+        * (lectura['humedad_pct'] - 80),
+        2
+    )
+
+    # Unir solamente lecturas consecutivas del mismo día.
+    if grupos:
+        ultimo = grupos[-1]
+        fin_anterior = datetime.strptime(
+            ultimo['fin'], '%Y-%m-%d %H:%M'
+        )
+
+        if (
+            momento - fin_anterior == timedelta(minutes=10)
+            and momento.date() == fin_anterior.date()
+        ):
+            ultimo['fin'] = momento.strftime('%Y-%m-%d %H:%M')
+            ultimo['criticidad'] = max(
+                ultimo['criticidad'], criticidad
+            )
+            return grupos
+
+    grupos.append({
+        'inicio': momento.strftime('%Y-%m-%d %H:%M'),
+        'fin': momento.strftime('%Y-%m-%d %H:%M'),
+        'criticidad': criticidad
+    })
+
+    return grupos
+
+
+def alertas_estacion(estacion):
+    criticas = sorted(
+        filter(
+            lambda lectura:
+                lectura['temperatura_c'] > 32
+                and lectura['humedad_pct'] > 80,
+            estacion['lecturas']
+        ),
+        key=fecha_hora
+    )
+
+    rangos = reduce(agrupar_alerta, criticas, [])
+
+    return list(map(
+        lambda rango: {
+            'estacion_id': estacion['id'],
+            'poblacion': estacion['poblacion'],
+            **rango
+        },
+        rangos
+    ))
+
+
+def alertas_bochorno(estaciones):
+    alertas = reduce(
+        lambda acumuladas, nuevas: acumuladas + nuevas,
+        map(alertas_estacion, estaciones),
+        []
+    )
+
+    return sorted(
+        alertas,
+        key=lambda alerta: alerta['criticidad'],
+        reverse=True
+    )
+
+
+def imprimir_resultados(resultados):
+    if not resultados:
+        print('No se encontraron resultados.')
+        return
+
+    # Consumir map para imprimir cada resultado.
+    list(map(print, resultados))
+
+
+def mostrar_menu(estaciones):
+    opcion = ''
+
+    while opcion != '0':
+        print('\n1. Temperaturas promedio por hora')
+        print('2. Momento más caluroso por estación')
+        print('3. Fluctuación barométrica')
+        print('4. Alertas de bochorno')
+        print('0. Salir')
+
+        opcion = input('Seleccione una opción: ').strip()
+
+        try:
+            if opcion == '1':
+                poblacion = input('Población: ')
+                imprimir_resultados(
+                    temperaturas_por_hora(estaciones, poblacion)
+                )
+
+            elif opcion == '2':
+                imprimir_resultados(
+                    momento_mas_caluroso(estaciones)
+                )
+
+            elif opcion == '3':
+                fecha = input('Fecha inicial (AAAA-MM-DD): ')
+                imprimir_resultados(
+                    fluctuacion_barometrica(estaciones, fecha)
+                )
+
+            elif opcion == '4':
+                imprimir_resultados(
+                    alertas_bochorno(estaciones)
+                )
+
+            elif opcion != '0':
+                print('Opción inválida.')
+
+        except ValueError as error:
+            print('Revise el dato ingresado: {0}'.format(error))
+
+
+if __name__ == '__main__':
+    random.seed(42)
+
+    inicio = datetime(2026, 9, 21)
+    estaciones = generar_datos_semana(inicio)
+
+    print('Semana simulada: 21 al 27 de septiembre de 2026')
+    print('Estaciones: {0}'.format(len(estaciones)))
+    print('Lecturas: {0}'.format(
+        sum(map(
+            lambda estacion: len(estacion['lecturas']),
+            estaciones
+        ))
+    ))
+
+    mostrar_menu(estaciones)
