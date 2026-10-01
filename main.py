@@ -82,3 +82,58 @@ def generar_datos_semana(inicio):
         lambda estacion: generar_datos_estacion(estacion, inicio),
         crear_estaciones()
     ))
+
+def buscar_estacion(estaciones, poblacion):
+    coincidencias = list(filter(
+        lambda estacion:
+            estacion['poblacion'].strip().lower()
+            == poblacion.strip().lower(),
+        estaciones
+    ))
+
+    return coincidencias[0] if coincidencias else None
+
+
+def promedio_temperatura(lecturas):
+    return round(
+        sum(map(
+            lambda lectura: lectura['temperatura_c'],
+            lecturas
+        )) / len(lecturas),
+        2
+    ) if lecturas else None
+
+
+def temperaturas_por_hora(estaciones, poblacion):
+    estacion = buscar_estacion(estaciones, poblacion)
+
+    if estacion is None:
+        raise ValueError('La población no está registrada.')
+
+    return list(map(
+        lambda hora: {
+            'hora': '{0:02d}:00'.format(hora),
+            'temperatura_promedio_c': promedio_temperatura(
+                list(filter(
+                    lambda lectura:
+                        int(lectura['hora'][:2]) == hora,
+                    estacion['lecturas']
+                ))
+            )
+        },
+        range(24)
+    ))
+
+# momento_mas_caluroso: Devuelve una lista de diccionarios con la estación, población y lectura más calurosa de cada estación.
+def momento_mas_caluroso(estaciones):
+    return list(map(
+        lambda estacion: {
+            'estacion_id': estacion['id'],
+            'poblacion': estacion['poblacion'],
+            'lectura': max(
+                estacion['lecturas'],
+                key=lambda lectura: lectura['temperatura_c']
+            )
+        },
+        estaciones
+    ))
