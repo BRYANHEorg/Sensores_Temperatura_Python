@@ -16,7 +16,7 @@ POBLACIONES = [
 ]
 
 DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-INICIO = datetime(2026, 9, 14)  # la semana de lecturas empieza el lunes 14/09/2026
+INICIO = datetime(2026, 9, 14)
 
 
 
@@ -35,3 +35,50 @@ def crear_estaciones():
     ))
 
 
+def limitar(valor, rango):
+    return round(max(rango[0], min(valor, rango[1])), 2)
+
+
+def generar_lectura(fecha, temperatura_anterior):
+    # Variación gradual de temperatura entre lecturas.
+    temperatura = limitar(
+        temperatura_anterior + random.uniform(-0.5, 0.5),
+        RANGOS['temperatura_c']
+    )
+
+    return {
+        'fecha': fecha.strftime('%d-%m-%Y'),
+        'hora': fecha.strftime('%H:%M'),
+        'temperatura_c': temperatura,
+        'humedad_pct': round(random.uniform(
+            *RANGOS['humedad_pct']
+        ), 2),
+        'presion_hpa': round(random.uniform(
+            *RANGOS['presion_hpa']
+        ), 2)
+    }
+
+
+def generar_datos_estacion(estacion, inicio):
+    temperatura = random.uniform(*RANGOS['temperatura_c'])
+    lecturas = []
+
+    # Ciclo usado para generar datos, no para consultas o cálculos.
+    for numero in range(7 * 24 * 6):
+        fecha = inicio + timedelta(minutes=numero * 10)
+        lectura = generar_lectura(fecha, temperatura)
+        lecturas.append(lectura)
+        temperatura = lectura['temperatura_c']
+
+    return {
+        'id': estacion['id'],
+        'poblacion': estacion['poblacion'],
+        'lecturas': lecturas
+    }
+
+
+def generar_datos_semana(inicio):
+    return list(map(
+        lambda estacion: generar_datos_estacion(estacion, inicio),
+        crear_estaciones()
+    ))
