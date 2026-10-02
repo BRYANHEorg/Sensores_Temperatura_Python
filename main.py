@@ -1,7 +1,9 @@
 import locale
 import random
-locale.setlocale(locale.LC_ALL, "es")
 from datetime import datetime, timedelta
+from functools import reduce
+
+locale.setlocale(locale.LC_ALL, "es")
 
 RANGOS = {
     'temperatura_c': [24, 35],
@@ -15,13 +17,21 @@ POBLACIONES = [
     'Golfito', 'Puerto Jiménez'
 ]
 
-DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+DIAS = [
+    'Lunes', 'Martes', 'Miércoles', 'Jueves',
+    'Viernes', 'Sábado', 'Domingo'
+]
+
 INICIO = datetime(2026, 9, 14)
 
 
-
 def fecha_texto(fecha):
-    return '{0} {1:02d}/{2:02d}/{3}'.format(DIAS[fecha.weekday()], fecha.day, fecha.month, fecha.year)
+    return '{0} {1:02d}/{2:02d}/{3}'.format(
+        DIAS[fecha.weekday()],
+        fecha.day,
+        fecha.month,
+        fecha.year
+    )
 
 
 def crear_estaciones():
@@ -36,7 +46,10 @@ def crear_estaciones():
 
 
 def limitar(valor, rango):
-    return round(max(rango[0], min(valor, rango[1])), 2)
+    return round(
+        max(rango[0], min(valor, rango[1])),
+        2
+    )
 
 
 def generar_lectura(fecha, temperatura_anterior):
@@ -50,12 +63,14 @@ def generar_lectura(fecha, temperatura_anterior):
         'fecha': fecha.strftime('%d-%m-%Y'),
         'hora': fecha.strftime('%H:%M'),
         'temperatura_c': temperatura,
-        'humedad_pct': round(random.uniform(
-            *RANGOS['humedad_pct']
-        ), 2),
-        'presion_hpa': round(random.uniform(
-            *RANGOS['presion_hpa']
-        ), 2)
+        'humedad_pct': round(
+            random.uniform(*RANGOS['humedad_pct']),
+            2
+        ),
+        'presion_hpa': round(
+            random.uniform(*RANGOS['presion_hpa']),
+            2
+        )
     }
 
 
@@ -79,9 +94,13 @@ def generar_datos_estacion(estacion, inicio):
 
 def generar_datos_semana(inicio):
     return list(map(
-        lambda estacion: generar_datos_estacion(estacion, inicio),
+        lambda estacion: generar_datos_estacion(
+            estacion,
+            inicio
+        ),
         crear_estaciones()
     ))
+
 
 def buscar_estacion(estaciones, poblacion):
     coincidencias = list(filter(
@@ -105,26 +124,33 @@ def promedio_temperatura(lecturas):
 
 
 def temperaturas_por_hora(estaciones, poblacion):
-    estacion = buscar_estacion(estaciones, poblacion)
+    estacion = buscar_estacion(
+        estaciones,
+        poblacion
+    )
 
     if estacion is None:
-        raise ValueError('La población no está registrada.')
+        raise ValueError(
+            'La población no está registrada.'
+        )
 
     return list(map(
         lambda hora: {
             'hora': '{0:02d}:00'.format(hora),
-            'temperatura_promedio_c': promedio_temperatura(
-                list(filter(
-                    lambda lectura:
-                        int(lectura['hora'][:2]) == hora,
-                    estacion['lecturas']
-                ))
-            )
+            'temperatura_promedio_c':
+                promedio_temperatura(
+                    list(filter(
+                        lambda lectura:
+                            int(lectura['hora'][:2]) == hora,
+                        estacion['lecturas']
+                    ))
+                )
         },
         range(24)
     ))
 
-# momento_mas_caluroso: Devuelve una lista de diccionarios con la estación, población y lectura más calurosa de cada estación.
+
+# Devuelve una lista con la lectura más calurosa de cada estación.
 def momento_mas_caluroso(estaciones):
     return list(map(
         lambda estacion: {
@@ -132,15 +158,18 @@ def momento_mas_caluroso(estaciones):
             'poblacion': estacion['poblacion'],
             'lectura': max(
                 estacion['lecturas'],
-                key=lambda lectura: lectura['temperatura_c']
+                key=lambda lectura:
+                    lectura['temperatura_c']
             )
         },
         estaciones
     ))
 
+
 def resumen_presion(estacion, fecha):
     lecturas = list(filter(
-        lambda lectura: lectura['fecha'] == fecha,
+        lambda lectura:
+            lectura['fecha'] == fecha,
         estacion['lecturas']
     ))
 
@@ -153,7 +182,8 @@ def resumen_presion(estacion, fecha):
         }
 
     presiones = list(map(
-        lambda lectura: lectura['presion_hpa'],
+        lambda lectura:
+            lectura['presion_hpa'],
         lecturas
     ))
 
@@ -166,16 +196,24 @@ def resumen_presion(estacion, fecha):
         'fecha': fecha,
         'presion_minima_hpa': minima,
         'presion_maxima_hpa': maxima,
-        'fluctuacion_hpa': round(maxima - minima, 2)
+        'fluctuacion_hpa': round(
+            maxima - minima,
+            2
+        )
     }
 
 
 def fluctuacion_barometrica(estaciones, fecha_inicial):
-    inicio = datetime.strptime(fecha_inicial, '%Y-%m-%d')
+    inicio = datetime.strptime(
+        fecha_inicial,
+        '%d-%m-%Y'
+    )
 
     fechas = list(map(
         lambda numero:
-            (inicio + timedelta(days=numero)).strftime('%Y-%m-%d'),
+            (
+                inicio + timedelta(days=numero)
+            ).strftime('%d-%m-%Y'),
         range(7)
     ))
 
@@ -183,7 +221,11 @@ def fluctuacion_barometrica(estaciones, fecha_inicial):
         lambda fecha: {
             'fecha': fecha,
             'estaciones': list(map(
-                lambda estacion: resumen_presion(estacion, fecha),
+                lambda estacion:
+                    resumen_presion(
+                        estacion,
+                        fecha
+                    ),
                 estaciones
             ))
         },
@@ -193,13 +235,17 @@ def fluctuacion_barometrica(estaciones, fecha_inicial):
 
 def fecha_hora(lectura):
     return datetime.strptime(
-        '{0} {1}'.format(lectura['fecha'], lectura['hora']),
-        '%Y-%m-%d %H:%M'
+        '{0} {1}'.format(
+            lectura['fecha'],
+            lectura['hora']
+        ),
+        '%d-%m-%Y %H:%M'
     )
 
 
 def agrupar_alerta(grupos, lectura):
     momento = fecha_hora(lectura)
+
     criticidad = round(
         (lectura['temperatura_c'] - 32)
         * (lectura['humedad_pct'] - 80),
@@ -209,23 +255,36 @@ def agrupar_alerta(grupos, lectura):
     # Unir solamente lecturas consecutivas del mismo día.
     if grupos:
         ultimo = grupos[-1]
+
         fin_anterior = datetime.strptime(
-            ultimo['fin'], '%Y-%m-%d %H:%M'
+            ultimo['fin'],
+            '%d-%m-%Y %H:%M'
         )
 
         if (
-            momento - fin_anterior == timedelta(minutes=10)
-            and momento.date() == fin_anterior.date()
+            momento - fin_anterior
+            == timedelta(minutes=10)
+            and momento.date()
+            == fin_anterior.date()
         ):
-            ultimo['fin'] = momento.strftime('%Y-%m-%d %H:%M')
-            ultimo['criticidad'] = max(
-                ultimo['criticidad'], criticidad
+            ultimo['fin'] = momento.strftime(
+                '%d-%m-%Y %H:%M'
             )
+
+            ultimo['criticidad'] = max(
+                ultimo['criticidad'],
+                criticidad
+            )
+
             return grupos
 
     grupos.append({
-        'inicio': momento.strftime('%Y-%m-%d %H:%M'),
-        'fin': momento.strftime('%Y-%m-%d %H:%M'),
+        'inicio': momento.strftime(
+            '%d-%m-%Y %H:%M'
+        ),
+        'fin': momento.strftime(
+            '%d-%m-%Y %H:%M'
+        ),
         'criticidad': criticidad
     })
 
@@ -243,7 +302,11 @@ def alertas_estacion(estacion):
         key=fecha_hora
     )
 
-    rangos = reduce(agrupar_alerta, criticas, [])
+    rangos = reduce(
+        agrupar_alerta,
+        criticas,
+        []
+    )
 
     return list(map(
         lambda rango: {
@@ -257,14 +320,19 @@ def alertas_estacion(estacion):
 
 def alertas_bochorno(estaciones):
     alertas = reduce(
-        lambda acumuladas, nuevas: acumuladas + nuevas,
-        map(alertas_estacion, estaciones),
+        lambda acumuladas, nuevas:
+            acumuladas + nuevas,
+        map(
+            alertas_estacion,
+            estaciones
+        ),
         []
     )
 
     return sorted(
         alertas,
-        key=lambda alerta: alerta['criticidad'],
+        key=lambda alerta:
+            alerta['criticidad'],
         reverse=True
     )
 
@@ -288,51 +356,92 @@ def mostrar_menu(estaciones):
         print('4. Alertas de bochorno')
         print('0. Salir')
 
-        opcion = input('Seleccione una opción: ').strip()
+        opcion = input(
+            'Seleccione una opción: '
+        ).strip()
 
         try:
             if opcion == '1':
-                poblacion = input('Población: ')
+                poblacion = input(
+                    'Población: '
+                )
+
                 imprimir_resultados(
-                    temperaturas_por_hora(estaciones, poblacion)
+                    temperaturas_por_hora(
+                        estaciones,
+                        poblacion
+                    )
                 )
 
             elif opcion == '2':
                 imprimir_resultados(
-                    momento_mas_caluroso(estaciones)
+                    momento_mas_caluroso(
+                        estaciones
+                    )
                 )
 
             elif opcion == '3':
-                fecha = input('Fecha inicial (AAAA-MM-DD): ')
+                fecha = input(
+                    'Fecha inicial (DD-MM-AAAA): '
+                )
+
                 imprimir_resultados(
-                    fluctuacion_barometrica(estaciones, fecha)
+                    fluctuacion_barometrica(
+                        estaciones,
+                        fecha
+                    )
                 )
 
             elif opcion == '4':
                 imprimir_resultados(
-                    alertas_bochorno(estaciones)
+                    alertas_bochorno(
+                        estaciones
+                    )
                 )
 
             elif opcion != '0':
                 print('Opción inválida.')
 
         except ValueError as error:
-            print('Revise el dato ingresado: {0}'.format(error))
+            print(
+                'Revise el dato ingresado: {0}'.format(
+                    error
+                )
+            )
 
 
 if __name__ == '__main__':
     random.seed(42)
 
-    inicio = datetime(2026, 9, 21)
-    estaciones = generar_datos_semana(inicio)
+    inicio = datetime(
+        2026,
+        9,
+        21
+    )
 
-    print('Semana simulada: 21 al 27 de septiembre de 2026')
-    print('Estaciones: {0}'.format(len(estaciones)))
-    print('Lecturas: {0}'.format(
-        sum(map(
-            lambda estacion: len(estacion['lecturas']),
-            estaciones
-        ))
-    ))
+    estaciones = generar_datos_semana(
+        inicio
+    )
+
+    print(
+        'Semana simulada: '
+        '21 al 27 de septiembre de 2026'
+    )
+
+    print(
+        'Estaciones: {0}'.format(
+            len(estaciones)
+        )
+    )
+
+    print(
+        'Lecturas: {0}'.format(
+            sum(map(
+                lambda estacion:
+                    len(estacion['lecturas']),
+                estaciones
+            ))
+        )
+    )
 
     mostrar_menu(estaciones)
